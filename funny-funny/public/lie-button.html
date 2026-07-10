@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>Lie Button · 규칙 변환 퍼즐</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>버그 탈출: 위믹스 타워 · Lie Button</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -11,7 +11,7 @@
     --ink: #4a3f2f;
     --ink-soft: #7a6b52;
     --outline: #3a2e22;
-    --panel-bg: rgba(255, 252, 240, 0.62);
+    --panel-bg: rgba(255, 252, 240, 0.66);
     --panel-border: rgba(255, 255, 255, 0.7);
 
     --forest: #7fc98f;
@@ -22,109 +22,354 @@
     --earth-deep: #a97847;
     --mint: #a8ecd4;
     --mint-deep: #5fcda3;
-    --lavender: #cdb8ec;
-    --lavender-deep: #9c7ed9;
+    --wemix: #5b8def;
+    --wemix-deep: #2f4f9e;
     --coral: #f0a3a3;
     --coral-deep: #d97070;
     --gold: #f5d789;
-
-    --shadow: 0 6px 0 0 var(--outline);
+    --neon: #d9a3ff;
+    --neon-deep: #8c6fd1;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   html, body {
+    width: 100%;
+    height: 100%;
     margin: 0;
     padding: 0;
-    min-height: 100%;
+    overflow: hidden;
     font-family: 'Press Start 2P', 'Consolas', 'Malgun Gothic', 'Courier New', monospace;
     color: var(--ink);
   }
 
-  body {
-    background: linear-gradient(180deg, #cdeeff 0%, #dff6e6 55%, #eaf7d8 100%);
-    min-height: 100vh;
-    padding: 20px 14px 40px;
-    image-rendering: pixelated;
+  #stageOuter {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #bfe3fb 0%, #d7f0e2 55%, #e6f2cf 100%);
+  }
+
+  #stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1280px;
+    height: 720px;
+    transform-origin: center center;
+    overflow: hidden;
   }
 
   h1, h2, h3, p { margin: 0; }
   button { font-family: inherit; }
   ul { list-style: none; margin: 0; padding: 0; }
 
-  .app { max-width: 980px; margin: 0 auto; }
-
-  .title-bar { text-align: center; margin-bottom: 20px; }
-  .title-bar h1 {
-    font-size: 22px;
-    letter-spacing: 1px;
-    color: var(--outline);
-    text-shadow: 3px 3px 0 rgba(159, 214, 178, 0.7), 0 0 16px rgba(255, 255, 255, 0.6);
+  /* =====================================================
+     TITLE SCREEN
+     ===================================================== */
+  .title-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26px 40px;
+    overflow: hidden;
+    z-index: 10;
   }
-  .title-bar span {
-    display: block;
-    font-size: 9px;
+  .title-screen.hidden { display: none; }
+
+  .title-bg-split {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(100deg, #140f26 0%, #241a3d 32%, #ffd6e6 62%, #bfe6ff 100%);
+  }
+  .title-bg-split::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 24px),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 24px);
+  }
+
+  .title-logo-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    margin-top: 6px;
+  }
+
+  .title-ring {
+    position: relative;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1c1533 0%, #0e0a1c 100%);
+    border: 3px solid var(--mint);
+    box-shadow: 0 0 0 6px rgba(168, 236, 212, 0.18), 0 0 24px rgba(168, 236, 212, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .title-ring span {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.5;
+    color: #fff;
+    text-shadow: 0 0 8px var(--neon);
+  }
+
+  .neon-title {
+    font-size: 46px;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow:
+      0 0 6px #fff,
+      0 0 14px var(--neon),
+      0 0 26px var(--neon-deep),
+      0 0 44px var(--neon-deep);
+  }
+
+  .neon-tagline {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 8px rgba(217, 163, 255, 0.9);
+    letter-spacing: 0.5px;
+  }
+
+  .char-select {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: nowrap;
+  }
+
+  .char-card {
+    width: 148px;
+    padding: 10px 8px 12px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 3px solid var(--outline);
+    box-shadow: 3px 3px 0 var(--outline);
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .char-card:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--outline); }
+  .char-card.selected {
+    border-color: var(--wemix-deep);
+    box-shadow: 0 0 0 3px var(--wemix), 3px 3px 0 var(--outline), 0 0 16px rgba(91, 141, 239, 0.7);
+    background: linear-gradient(180deg, #eaf2ff, #d9e8ff);
+  }
+  .char-card .char-portrait {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 8px;
+  }
+  .char-card .char-portrait svg {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 0 rgba(58, 46, 34, 0.3));
+  }
+  .char-card .char-name {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+  .char-card .char-desc {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 10.5px;
     color: var(--ink-soft);
-    margin-top: 10px;
-    letter-spacing: 1px;
-    line-height: 1.8;
+    margin-top: 2px;
   }
 
-  .layout {
-    display: grid;
-    grid-template-columns: 270px 1fr;
-    gap: 18px;
-    align-items: start;
+  .title-footer {
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .title-tower {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .title-tower .tower-ico { width: 46px; height: 66px; }
+  .title-tower .tower-ico svg { width: 100%; height: 100%; image-rendering: pixelated; }
+  .title-tower span {
+    font-size: 8px;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px var(--wemix);
+  }
+
+  .start-btn {
+    border: 3px solid var(--outline);
+    padding: 16px 30px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(180deg, var(--coral), var(--coral-deep));
+    box-shadow: 4px 4px 0 var(--outline);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .start-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--outline); }
+  .start-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--outline); }
+
+  .title-brand-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    padding: 6px 10px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+  .title-brand-badge b { font-size: 9px; letter-spacing: 0.5px; }
+  .title-brand-badge span {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 9px;
+    opacity: 0.85;
+  }
+
+  /* =====================================================
+     GAME SCREEN
+     ===================================================== */
+  .game-screen {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #cdeeff 0%, #dff6e6 55%, #eaf7d8 100%);
+    display: flex;
+    flex-direction: column;
+    padding: 14px 18px;
+    gap: 8px;
+  }
+  .game-screen.hidden { display: none; }
+
+  /* ---------- TOP BAR ---------- */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .top-bar h1 {
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    color: var(--outline);
+    text-shadow: 2px 2px 0 rgba(159, 214, 178, 0.7);
+  }
+  .brand-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    background: var(--wemix-deep);
+    color: #fff;
+    padding: 5px 10px;
+    border: 2px solid var(--outline);
+    box-shadow: 2px 2px 0 var(--outline);
+  }
+  .brand-badge b { font-size: 9px; letter-spacing: 0.5px; }
+  .brand-badge span {
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 9px;
+    color: #cfe0ff;
+  }
+
+  .dialogue-strip {
+    flex-shrink: 0;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid var(--outline);
+    box-shadow: 2px 2px 0 var(--outline);
+    padding: 8px 12px;
+  }
+
+  .content-row {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 16px;
   }
 
   /* ---------- PIXEL PANEL / BORDER SYSTEM ---------- */
   .panel {
     background: var(--panel-bg);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     border: 3px solid var(--outline);
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
-    filter: drop-shadow(0 5px 0 var(--outline));
+    filter: drop-shadow(0 4px 0 var(--outline));
     clip-path: polygon(
       0 8px, 8px 8px, 8px 0,
       calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
       100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
       8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
     );
-    padding: 18px;
   }
 
   /* ---------- RULES PANEL ---------- */
+  .rules-panel {
+    width: 300px;
+    flex-shrink: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   .stage-info {
     display: inline-block;
     background: var(--forest-deep);
     color: #fff;
     font-size: 10px;
     letter-spacing: 1px;
-    padding: 7px 12px;
+    padding: 6px 10px;
     border: 2px solid var(--outline);
     box-shadow: 2px 2px 0 var(--outline);
-    margin-bottom: 14px;
+    margin-bottom: 10px;
+    align-self: flex-start;
   }
 
   .rules-panel h2 {
-    font-size: 10px;
+    font-size: 9.5px;
     color: var(--ink-soft);
-    letter-spacing: 1.5px;
-    margin-bottom: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
   }
 
-  .rule-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .rule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
 
   .rule-btn {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.8);
+    gap: 9px;
+    background: rgba(255, 255, 255, 0.82);
     border: 2px solid var(--outline);
     box-shadow: 3px 3px 0 var(--outline);
-    padding: 10px;
+    padding: 8px;
     cursor: pointer;
     text-align: left;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
@@ -134,12 +379,11 @@
 
   .rule-checkbox {
     flex-shrink: 0;
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     border: 2px solid var(--outline);
     background: #fff;
     position: relative;
-    transition: background 0.2s ease;
   }
 
   .rule-item.lied .rule-btn {
@@ -147,10 +391,7 @@
     border-color: var(--coral-deep);
     box-shadow: 3px 3px 0 var(--coral-deep);
   }
-  .rule-item.lied .rule-checkbox {
-    background: var(--coral-deep);
-    border-color: var(--outline);
-  }
+  .rule-item.lied .rule-checkbox { background: var(--coral-deep); border-color: var(--outline); }
   .rule-item.lied .rule-checkbox::after {
     content: "";
     position: absolute;
@@ -160,65 +401,62 @@
       linear-gradient(-45deg, transparent 40%, #fff 40%, #fff 60%, transparent 60%);
   }
 
-  .rule-text { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 5px; }
+  .rule-text { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 4px; }
   .rule-label {
     font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    font-size: 12px;
+    font-size: 10.5px;
     font-weight: 700;
-    line-height: 1.4;
+    line-height: 1.35;
   }
-  .rule-status {
-    font-size: 8px;
-    letter-spacing: 0.5px;
-    color: var(--ink-soft);
-  }
+  .rule-status { font-size: 7.5px; letter-spacing: 0.5px; color: var(--ink-soft); }
   .rule-item.lied .rule-status { color: var(--coral-deep); }
 
   .rule-hint {
     font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    font-size: 11.5px;
-    line-height: 1.7;
+    font-size: 10.5px;
+    line-height: 1.55;
     color: var(--ink-soft);
     background: rgba(255, 255, 255, 0.6);
     border: 2px solid rgba(58, 46, 34, 0.25);
-    padding: 10px 12px;
-    margin-bottom: 16px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
   }
-
-  .legend { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-  .legend-row {
-    display: flex; align-items: center; gap: 8px;
-    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    font-size: 11.5px; color: var(--ink-soft);
-  }
-  .legend-swatch { width: 14px; height: 14px; flex-shrink: 0; border: 2px solid var(--outline); }
 
   .action-btn {
+    margin-top: auto;
     width: 100%;
     border: 2px solid var(--outline);
-    padding: 12px;
-    font-size: 10px;
+    padding: 10px;
+    font-size: 9.5px;
     letter-spacing: 0.5px;
     color: #fff;
     cursor: pointer;
-    background: var(--lavender-deep);
+    background: var(--wemix-deep);
     box-shadow: 3px 3px 0 var(--outline);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
   .action-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--outline); }
   .action-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--outline); }
 
-  /* ---------- MAP PANEL ---------- */
-  .map-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  /* ---------- MAP AREA ---------- */
+  .map-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding: 10px;
+  }
 
   .grid-wrap {
-    width: 100%;
-    max-width: 460px;
-    aspect-ratio: 1 / 1;
+    width: 560px;
+    height: 560px;
+    flex-shrink: 0;
     position: relative;
     border: 4px solid var(--outline);
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
-    filter: drop-shadow(0 6px 0 var(--outline));
+    filter: drop-shadow(0 5px 0 var(--outline));
   }
 
   .grid {
@@ -248,7 +486,6 @@
     border: 1px solid rgba(58, 46, 34, 0.15);
   }
 
-  /* ---- WALL: hedge block ---- */
   .tile-wall {
     background-color: var(--forest-deep);
     background-image:
@@ -258,7 +495,6 @@
     box-shadow: inset 0 -4px 0 rgba(58, 46, 34, 0.25), inset 0 3px 0 rgba(255, 255, 255, 0.2);
   }
 
-  /* ---- FLOOR: grass w/ speckle tufts ---- */
   .tile-floor {
     background-color: var(--forest);
     background-image:
@@ -279,14 +515,14 @@
     opacity: 0.85;
   }
 
-  /* ---- EXIT: glowing pixel portal ---- */
+  /* ---- EXIT: WEMIX Tower portal ---- */
   .tile-exit {
-    background: radial-gradient(circle, #f2e9ff 0%, var(--lavender) 55%, var(--lavender-deep) 100%);
+    background: radial-gradient(circle, #eaf2ff 0%, var(--wemix) 55%, var(--wemix-deep) 100%);
     animation: portalGlow 1.7s ease-in-out infinite;
   }
   @keyframes portalGlow {
-    0%, 100% { box-shadow: inset 0 0 8px rgba(156, 126, 217, 0.5); }
-    50% { box-shadow: inset 0 0 16px rgba(156, 126, 217, 0.9); }
+    0%, 100% { box-shadow: inset 0 0 8px rgba(47, 79, 158, 0.5); }
+    50% { box-shadow: inset 0 0 16px rgba(47, 79, 158, 0.9); }
   }
   .tile-exit::before, .tile-exit::after {
     content: "";
@@ -297,16 +533,16 @@
     box-shadow: 0 0 4px var(--gold);
     animation: sparkleFloat 1.5s ease-in-out infinite;
   }
-  .tile-exit::before { left: 22%; top: 28%; animation-delay: 0s; }
-  .tile-exit::after { left: 68%; top: 62%; animation-delay: 0.55s; }
+  .tile-exit::before { left: 20%; top: 26%; animation-delay: 0s; }
+  .tile-exit::after { left: 70%; top: 60%; animation-delay: 0.55s; }
   @keyframes sparkleFloat {
     0%, 100% { opacity: 0.15; transform: translateY(0); }
     50% { opacity: 1; transform: translateY(-4px); }
   }
-  .exit-sword { position: relative; z-index: 2; width: 42%; height: 62%; }
-  .exit-sword svg { width: 100%; height: 100%; }
+  .exit-tower { position: relative; z-index: 2; width: 46%; height: 68%; }
+  .exit-tower svg { width: 100%; height: 100%; }
 
-  /* ---- WATER ---- */
+  /* ---- WATER (coffee spill) ---- */
   .tile-water {
     background-color: var(--sky-deep);
     background-image:
@@ -323,7 +559,7 @@
     box-shadow: inset 0 0 0 2px rgba(95, 176, 216, 0.4);
   }
 
-  /* ---- SPIKE ---- */
+  /* ---- SPIKE (overtime hazard) ---- */
   .tile-spike {
     background-color: #e6b596;
     background-image: repeating-linear-gradient(45deg, rgba(58, 46, 34, 0.08) 0 3px, transparent 3px 8px);
@@ -335,7 +571,7 @@
   .spike-ico svg { width: 100%; height: 100%; transition: filter 0.3s ease, opacity 0.3s ease; }
   .tile-spike.passable .spike-ico svg { filter: grayscale(0.75) brightness(1.2); opacity: 0.55; }
 
-  /* ---- DOOR ---- */
+  /* ---- DOOR (break room) ---- */
   .tile-door {
     background-color: var(--earth);
     background-image: repeating-linear-gradient(90deg, #c9986a 0 7px, #b98552 7px 14px);
@@ -348,7 +584,7 @@
     opacity: 0.9;
   }
 
-  .tile-icon { font-size: clamp(10px, 2.6vw, 16px); pointer-events: none; user-select: none; }
+  .tile-icon { font-size: 15px; pointer-events: none; user-select: none; }
 
   /* ---- PLAYER SPRITE ---- */
   .player {
@@ -366,24 +602,33 @@
   }
   .player.no-anim { transition: none !important; }
   .player svg {
-    width: 86%;
-    height: 86%;
+    width: 88%;
+    height: 88%;
     image-rendering: pixelated;
     filter: drop-shadow(0 2px 0 rgba(58, 46, 34, 0.35));
   }
 
+  /* ---------- SIDE CONTROLS ---------- */
+  .side-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+
   .dpad {
     display: grid;
-    grid-template-columns: repeat(3, 52px);
-    grid-template-rows: repeat(2, 52px);
-    gap: 8px;
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(2, 50px);
+    gap: 7px;
     justify-content: center;
   }
   .dpad button {
     border: 2px solid var(--outline);
     background: var(--panel-bg);
     box-shadow: 3px 3px 0 var(--outline);
-    font-size: 16px;
+    font-size: 15px;
     color: var(--forest-deep);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -397,12 +642,13 @@
 
   .kbd-hint {
     font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    font-size: 11.5px; color: var(--ink-soft); text-align: center;
+    font-size: 10.5px; color: var(--ink-soft); text-align: center; line-height: 1.6;
+    max-width: 150px;
   }
 
   /* ---------- MODAL ---------- */
   .modal-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: rgba(58, 46, 34, 0.45);
     backdrop-filter: blur(4px);
@@ -427,78 +673,120 @@
       100% calc(100% - 10px), calc(100% - 10px) calc(100% - 10px), calc(100% - 10px) 100%,
       10px 100%, 10px calc(100% - 10px), 0 calc(100% - 10px)
     );
-    padding: 34px 28px;
-    max-width: 360px;
+    padding: 30px 26px;
+    max-width: 380px;
     width: 100%;
     text-align: center;
-    transform: translateY(20px) scale(0.96);
+    transform: translateY(16px) scale(0.96);
     transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
   .modal-overlay.visible .modal-card { transform: translateY(0) scale(1); }
-  .modal-card h2 { font-size: 15px; margin-bottom: 16px; color: var(--forest-deep); line-height: 1.6; }
+  .modal-card h2 { font-size: 14px; margin-bottom: 14px; color: var(--wemix-deep); line-height: 1.6; }
   .modal-card p {
     font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-    font-size: 13.5px; line-height: 1.8; color: var(--ink); margin-bottom: 22px;
-  }
-
-  @media (max-width: 760px) {
-    .layout { grid-template-columns: 1fr; }
-    .legend { display: none; }
+    font-size: 13px; line-height: 1.75; color: var(--ink); margin-bottom: 18px;
   }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="title-bar">
-    <h1>🔀 Lie Button</h1>
-    <span>규칙을 거짓으로 바꿔, 진실 너머로 나아가라</span>
-  </div>
+<div id="stageOuter">
+  <div id="stage">
 
-  <div class="layout">
-    <aside class="panel rules-panel">
-      <div class="stage-info">STAGE <span id="stageNum">1</span> / 5</div>
-      <h2>규칙 (RULES)</h2>
-      <ul class="rule-list" id="ruleList"></ul>
-      <p class="rule-hint">규칙을 클릭하면 그 규칙만 <b>거짓(LIE)</b>이 됩니다. 다른 규칙을 누르면 이전 규칙은 다시 참으로 돌아가요.</p>
+    <!-- ============ TITLE SCREEN ============ -->
+    <div class="title-screen" id="titleScreen">
+      <div class="title-bg-split"></div>
 
-      <div class="legend">
-        <div class="legend-row"><span class="legend-swatch" style="background:var(--forest-deep);"></span>벽 (통과 불가)</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:var(--sky-deep);"></span>물</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:var(--coral-deep);"></span>가시</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:var(--earth-deep);"></span>문</div>
-        <div class="legend-row"><span class="legend-swatch" style="background:var(--lavender-deep);"></span>출구</div>
+      <div class="title-logo-wrap">
+        <div class="title-ring"><span>거짓말<br>버튼</span></div>
+        <h1 class="neon-title">LIE BUTTON</h1>
+        <p class="neon-tagline">당신의 거짓말, 야근을 멈추게 합니다</p>
       </div>
 
-      <button id="resetBtn" class="action-btn">🔄 이 스테이지 재시작</button>
-    </aside>
+      <div class="char-select" id="charSelect"></div>
 
-    <main class="panel map-panel">
-      <div class="grid-wrap">
-        <div class="grid" id="grid"></div>
+      <div class="title-footer">
+        <div class="title-brand-badge">
+          <b>WEMADE PLAY</b>
+          <span>internal game jam</span>
+        </div>
+        <div class="title-tower">
+          <div class="tower-ico" id="titleTowerIco"></div>
+          <span>WEMIX TOWER</span>
+        </div>
+        <button id="startBtn" class="start-btn">▶ 게임 시작</button>
       </div>
-      <div class="dpad" id="dpad">
-        <button class="dpad-up" data-dir="up">▲</button>
-        <button class="dpad-left" data-dir="left">◀</button>
-        <button class="dpad-down" data-dir="down">▼</button>
-        <button class="dpad-right" data-dir="right">▶</button>
-      </div>
-      <p class="kbd-hint">방향키 또는 WASD로 이동할 수 있어요.</p>
-    </main>
-  </div>
-</div>
+    </div>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-card">
-    <h2 id="modalTitle"></h2>
-    <p id="modalText"></p>
-    <button id="modalBtn" class="action-btn"></button>
+    <!-- ============ GAME SCREEN ============ -->
+    <div class="game-screen hidden" id="gameScreen">
+      <div class="top-bar">
+        <h1>🐰 버그 탈출: 위믹스 타워</h1>
+        <div class="brand-badge">
+          <b>WEMADE PLAY</b>
+          <span>internal game jam</span>
+        </div>
+      </div>
+
+      <div class="dialogue-strip" id="dialogueStrip">오늘도 이슈와의 사투... 다 잡으면 칼퇴 가능하다는데? 🐛</div>
+
+      <div class="content-row">
+        <aside class="panel rules-panel">
+          <div class="stage-info">STAGE <span id="stageNum">1</span> / 5</div>
+          <h2>이슈 트래커 (RULES)</h2>
+          <ul class="rule-list" id="ruleList"></ul>
+          <p class="rule-hint">이슈를 클릭하면 그 이슈만 <b>거짓(해결 안 됨 취급)</b>이 됩니다. 다른 이슈를 누르면 이전 이슈는 다시 참으로 돌아가요. 동시에 하나만 거짓으로 만들 수 있어요.</p>
+          <button id="resetBtn" class="action-btn">🔄 이 스테이지 재도전</button>
+        </aside>
+
+        <main class="map-area">
+          <div class="grid-wrap">
+            <div class="grid" id="grid"></div>
+          </div>
+          <div class="side-controls">
+            <div class="dpad" id="dpad">
+              <button class="dpad-up" data-dir="up">▲</button>
+              <button class="dpad-left" data-dir="left">◀</button>
+              <button class="dpad-down" data-dir="down">▼</button>
+              <button class="dpad-right" data-dir="right">▶</button>
+            </div>
+            <p class="kbd-hint">방향키 또는 WASD로 이동</p>
+          </div>
+        </main>
+      </div>
+
+      <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+          <h2 id="modalTitle"></h2>
+          <p id="modalText"></p>
+          <button id="modalBtn" class="action-btn"></button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
 (function () {
   "use strict";
+
+  /* ---------------- STAGE FIT (16:9, iframe-responsive, no scroll) ---------------- */
+
+  var BASE_W = 1280;
+  var BASE_H = 720;
+  var stageEl = document.getElementById("stage");
+
+  function fitStage() {
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var scale = Math.min(vw / BASE_W, vh / BASE_H);
+    stageEl.style.transform = "translate(-50%, -50%) scale(" + scale + ")";
+  }
+
+  window.addEventListener("resize", fitStage);
+  window.addEventListener("orientationchange", fitStage);
+  fitStage();
 
   /* ---------------- PIXEL SPRITE HELPER ---------------- */
 
@@ -517,8 +805,11 @@
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">' + rects + "</svg>";
   }
 
-  var PLAYER_PIXELS = [
-    "..........",
+  /* Shared silhouette for every playable mascot (original pixel design, not a
+     reproduction of any copyrighted character artwork) - only the palette
+     changes per character. */
+  var MASCOT_PIXELS = [
+    "..KH..HK..",
     "..KKKKKK..",
     "KHHHHHHHHK",
     "KHHHHHHHHK",
@@ -529,15 +820,16 @@
     "KOOOOOOOOK",
     "..PPPPPP.."
   ];
-  var PLAYER_PALETTE = {
-    K: "#3a2e22",
-    H: "#cdb8ec",
-    S: "#ffe0c2",
-    E: "#3a2e22",
-    O: "#7fc98f",
-    P: "#a97847"
-  };
-  var PLAYER_SVG = pixelSvg(PLAYER_PIXELS, PLAYER_PALETTE);
+
+  var CHARACTERS = [
+    { id: "ani", name: "애니", desc: "토끼", palette: { K: "#5a4636", H: "#ffc2d1", S: "#fffaf3", E: "#3a2e22", O: "#a8c8f5", P: "#e0a8b8" } },
+    { id: "ari", name: "아리", desc: "병아리", palette: { K: "#7a5a1a", H: "#ffe066", S: "#fff4c2", E: "#3a2e22", O: "#ffb84d", P: "#ff8a3d" } },
+    { id: "pinky", name: "핑키", desc: "돼지", palette: { K: "#8a4a5a", H: "#ffb3c6", S: "#ffd9e0", E: "#3a2e22", O: "#ff8fab", P: "#e06b8a" } },
+    { id: "lucy", name: "루시", desc: "고양이", palette: { K: "#5a5a6a", H: "#d9d9e0", S: "#f5f5fa", E: "#3a2e22", O: "#b8b8c9", P: "#8a8a9c" } },
+    { id: "micky", name: "믹키", desc: "쥐", palette: { K: "#5a4028", H: "#c9a678", S: "#f0ddb8", E: "#3a2e22", O: "#a97847", P: "#8a5a35" } },
+    { id: "mongyi", name: "몽이", desc: "원숭이", palette: { K: "#3f5a2f", H: "#a8d98f", S: "#f5e6c8", E: "#3a2e22", O: "#7fbf5f", P: "#5f9c47" } },
+    { id: "blue", name: "블루", desc: "강아지", palette: { K: "#1a2a4a", H: "#a8c8f0", S: "#e6f0ff", E: "#3a2e22", O: "#5b8def", P: "#2f4f9e" } }
+  ];
 
   var SPIKE_PIXELS = [
     "..KKKK..",
@@ -550,18 +842,22 @@
   var SPIKE_PALETTE = { K: "#3a2e22", C: "#f0a3a3" };
   var SPIKE_SVG = pixelSvg(SPIKE_PIXELS, SPIKE_PALETTE);
 
-  var SWORD_PIXELS = [
-    "..KK..",
-    "..KK..",
-    "..BB..",
-    "..BB..",
-    "..BB..",
-    ".KKKK.",
-    "..HH..",
-    "..GG.."
+  /* Stylized "WEMIX Tower"-inspired beacon tower (original silhouette, not a
+     reproduction of any official architectural artwork or logo). */
+  var TOWER_PIXELS = [
+    "..KKKK..",
+    "..KGGK..",
+    ".KTTTTK.",
+    ".KTTTTK.",
+    "KTTTTTTK",
+    "KTDDDDTK",
+    "KTTTTTTK",
+    "KTDDDDTK",
+    "KTTTTTTK",
+    "KKKKKKKK"
   ];
-  var SWORD_PALETTE = { K: "#3a2e22", B: "#e2ecf0", H: "#8a5a35", G: "#f5d789" };
-  var SWORD_SVG = pixelSvg(SWORD_PIXELS, SWORD_PALETTE);
+  var TOWER_PALETTE = { K: "#1a2a4a", T: "#5b8def", D: "#2f4f9e", G: "#fff2b8" };
+  var TOWER_SVG = pixelSvg(TOWER_PIXELS, TOWER_PALETTE);
 
   var SPIKE_ROW_HTML =
     '<div class="spike-row">' +
@@ -570,12 +866,35 @@
     '<span class="spike-ico">' + SPIKE_SVG + "</span>" +
     "</div>";
 
+  document.getElementById("titleTowerIco").innerHTML = TOWER_SVG;
+
   /* ---------------- DATA ---------------- */
 
+  var RULE_VARIANTS = {
+    water: [
+      "커피가 쏟아진 바닥은 지나갈 수 없다",
+      "'회의 규칙' 1. 점심 직전 10분 회의는 못 피한다",
+      "메신저 알림은 무시할 수 없다",
+      "상사의 '잠깐 얘기 좀'은 피할 수 없다"
+    ],
+    spike: [
+      "무한 야근은 위험하다",
+      "'야근 규칙' 1. 사유 불문, 6시 이후는 야근이다",
+      "압박 면담은 위험하다",
+      "코드 리뷰 지옥은 위험하다"
+    ],
+    door: [
+      "탕비실 문은 잠겨있다",
+      "'결재 규칙' 1. 대표님 결재는 필수다",
+      "회의실 문은 예약 없이 열 수 없다",
+      "연차 신청 문은 잠겨있다"
+    ]
+  };
+
   var rules = [
-    { id: "water", label: "물은 지나갈 수 없다", tile: "W" },
-    { id: "spike", label: "가시는 위험하다", tile: "S" },
-    { id: "door", label: "문은 잠겨있다", tile: "D" }
+    { id: "water", tile: "W" },
+    { id: "spike", tile: "S" },
+    { id: "door", tile: "D" }
   ];
 
   var stages = [
@@ -651,22 +970,38 @@
     }
   ];
 
+  var STAGE_DIALOGUE = [
+    "오늘도 이슈와의 사투... 다 잡으면 칼퇴 가능하다는데? 🐛",
+    "커피 쏟은 자리 청소 완료! 다음 이슈로 넘어갑니다.",
+    "야근 몬스터 발견... 조심히 지나가자.",
+    "탕비실 문이 또 잠겼다. 총무팀 어디 계세요...",
+    "마지막 스테이지! 이것만 넘으면 위믹스 타워 통과, 칼퇴 확정.",
+    "모든 브랜치 머지 완료! 이제 정말 퇴근이다 🏃💨"
+  ];
+
   /* ---------------- STATE ---------------- */
 
   var state = {
+    characterIndex: 0,
     stageIndex: 0,
     liedRuleId: null,
     grid: [],
     playerPos: { r: 0, c: 0 },
-    locked: false
+    locked: false,
+    ruleLabels: {}
   };
 
   var el = {
+    titleScreen: document.getElementById("titleScreen"),
+    gameScreen: document.getElementById("gameScreen"),
+    charSelect: document.getElementById("charSelect"),
+    startBtn: document.getElementById("startBtn"),
     stageNum: document.getElementById("stageNum"),
     ruleList: document.getElementById("ruleList"),
     grid: document.getElementById("grid"),
     resetBtn: document.getElementById("resetBtn"),
     dpad: document.getElementById("dpad"),
+    dialogueStrip: document.getElementById("dialogueStrip"),
     modalOverlay: document.getElementById("modalOverlay"),
     modalTitle: document.getElementById("modalTitle"),
     modalText: document.getElementById("modalText"),
@@ -674,6 +1009,57 @@
   };
 
   var playerEl = null;
+  var currentPlayerSvg = pixelSvg(MASCOT_PIXELS, CHARACTERS[0].palette);
+
+  /* ---------------- TITLE SCREEN ---------------- */
+
+  function renderCharSelect() {
+    el.charSelect.innerHTML = "";
+    CHARACTERS.forEach(function (c, index) {
+      var card = document.createElement("div");
+      card.className = "char-card" + (index === state.characterIndex ? " selected" : "");
+      card.innerHTML =
+        '<div class="char-portrait">' + pixelSvg(MASCOT_PIXELS, c.palette) + "</div>" +
+        '<div class="char-name">' + c.name + "</div>" +
+        '<div class="char-desc">' + c.desc + "</div>";
+      card.addEventListener("click", function () {
+        state.characterIndex = index;
+        renderCharSelect();
+      });
+      el.charSelect.appendChild(card);
+    });
+  }
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function randomizeRuleLabels() {
+    state.ruleLabels = {
+      water: pickRandom(RULE_VARIANTS.water),
+      spike: pickRandom(RULE_VARIANTS.spike),
+      door: pickRandom(RULE_VARIANTS.door)
+    };
+  }
+
+  function startNewGame() {
+    currentPlayerSvg = pixelSvg(MASCOT_PIXELS, CHARACTERS[state.characterIndex].palette);
+    playerEl = null;
+    randomizeRuleLabels();
+
+    el.titleScreen.classList.add("hidden");
+    el.gameScreen.classList.remove("hidden");
+
+    state.stageIndex = 0;
+    loadStage(0);
+    fitStage();
+  }
+
+  function showTitleScreen() {
+    el.gameScreen.classList.add("hidden");
+    el.titleScreen.classList.remove("hidden");
+    fitStage();
+  }
 
   /* ---------------- RULE / PASSABILITY LOGIC ---------------- */
 
@@ -700,7 +1086,7 @@
   function tileIcon(ch) {
     if (ch === "S") return SPIKE_ROW_HTML;
     if (ch === "D") return '<span class="tile-icon">' + (isPassable(ch) ? "🔓" : "🔒") + "</span>";
-    if (ch === "E") return '<span class="exit-sword">' + SWORD_SVG + "</span>";
+    if (ch === "E") return '<span class="exit-tower">' + TOWER_SVG + "</span>";
     return "";
   }
 
@@ -720,8 +1106,8 @@
     if (!playerEl) {
       playerEl = document.createElement("div");
       playerEl.className = "player";
-      playerEl.innerHTML = PLAYER_SVG;
     }
+    playerEl.innerHTML = currentPlayerSvg;
     el.grid.appendChild(playerEl);
   }
 
@@ -748,7 +1134,7 @@
       btn.innerHTML =
         '<span class="rule-checkbox"></span>' +
         '<span class="rule-text">' +
-        '<span class="rule-label">' + rule.label + "</span>" +
+        '<span class="rule-label">' + state.ruleLabels[rule.id] + "</span>" +
         '<span class="rule-status">' + (lied ? "거짓 (LIE)" : "참 (TRUE)") + "</span>" +
         "</span>";
       btn.addEventListener("click", function () {
@@ -789,6 +1175,7 @@
     state.grid = gridChars;
 
     el.stageNum.textContent = index + 1;
+    el.dialogueStrip.textContent = STAGE_DIALOGUE[index] || STAGE_DIALOGUE[0];
     renderRules();
     renderGrid();
     updatePlayerPosition(true);
@@ -802,6 +1189,7 @@
 
   function move(dr, dc) {
     if (state.locked) return;
+    if (el.gameScreen.classList.contains("hidden")) return;
     var nr = state.playerPos.r + dr;
     var nc = state.playerPos.c + dc;
     if (nr < 0 || nr > 9 || nc < 0 || nc > 9) return;
@@ -823,9 +1211,10 @@
   function onStageClear() {
     state.locked = true;
     if (state.stageIndex < stages.length - 1) {
+      el.dialogueStrip.textContent = STAGE_DIALOGUE[state.stageIndex + 1] || STAGE_DIALOGUE[0];
       showModal(
-        "스테이지 클리어! 🎉",
-        (state.stageIndex + 1) + "단계를 통과했습니다. 다음 규칙 퍼즐이 기다리고 있어요.",
+        "이슈 해결! 🎉",
+        (state.stageIndex + 1) + "번째 이슈를 해결했습니다. 다음 브랜치(스테이지)로 이동할까요?",
         "다음 스테이지로 →",
         function () {
           hideModal();
@@ -833,13 +1222,14 @@
         }
       );
     } else {
+      el.dialogueStrip.textContent = STAGE_DIALOGUE[5];
       showModal(
-        "축하합니다! 🏆",
-        "모든 5개 스테이지를 클리어했습니다. 당신은 진짜 'Lie Button' 마스터입니다!",
-        "처음부터 다시하기",
+        "칼퇴 성공! 🏆",
+        "모든 버그(이슈)를 해결했습니다! 위믹스 타워를 당당히... 아니, 조용히 빠져나와 퇴근합니다. 오늘 하루도 고생하셨습니다, 위메이더님! 🐰🏢",
+        "타이틀로 돌아가기",
         function () {
           hideModal();
-          loadStage(0);
+          showTitleScreen();
         }
       );
     }
@@ -873,6 +1263,10 @@
   };
 
   function init() {
+    renderCharSelect();
+
+    el.startBtn.addEventListener("click", startNewGame);
+
     document.addEventListener("keydown", function (e) {
       var delta = keyMap[e.key];
       if (!delta) return;
@@ -892,7 +1286,7 @@
       loadStage(state.stageIndex);
     });
 
-    loadStage(0);
+    fitStage();
   }
 
   document.addEventListener("DOMContentLoaded", init);
