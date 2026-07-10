@@ -945,10 +945,18 @@
       pixels: [".KKKK.", "KW..WK", "KW..WK", "KKKKKK", "KYYYYK", "KKKKKK"],
       palette: { K: "#3a2e22", W: "#c9c9d9", Y: "#e0ac3c" }
     },
+    moon: {
+      pixels: ["..KKK.", ".KMMK.", "KMM...", "KMM...", ".KMMK.", "..KKK."],
+      palette: { K: "#1a2a4a", M: "#f5e6a8" }
+    },
+    bell: {
+      pixels: ["..KK..", ".KBBK.", "KBBBBK", "KBBBBK", ".KKKK.", "..KK.."],
+      palette: { K: "#3a2e22", B: "#e0ac3c" }
+    },
     boss: {
-      /* A stern "boss" figure in a suit, blocking the way - the visual
-         stand-in for people-driven office hazards (an unavoidable chat,
-         a pressure meeting, mandatory sign-off). Original pixel design. */
+      /* A stern, red-tied "boss" figure - used for the most acute pressure
+         hazard (a one-on-one grilling). Original pixel design, not a
+         reproduction of any official sprite. */
       pixels: [
         "H........H",
         "..KKKKKK..",
@@ -962,6 +970,42 @@
         "..PPPPPP.."
       ],
       palette: { K: "#2a2a2a", H: "#8a8a8a", S: "#e6d9c2", V: "#2a2a2a", E: "#2a2a2a", O: "#2f2f3a", T: "#c94f4f", P: "#1a1a1a" }
+    },
+    boss_talk: {
+      /* Same boss silhouette, recolored with a navy suit, gold tie, and a
+         neutral (non-angry) brow - a casual "got a sec?" interruption
+         rather than an acute threat. */
+      pixels: [
+        "H........H",
+        "..KKKKKK..",
+        "KHHHHHHHHK",
+        "KHHHHHHHHK",
+        "KSSSSSSSSK",
+        "KSSESSESSK",
+        "KSSSSSSSSK",
+        "KOOOTTOOOK",
+        "KOOOTTOOOK",
+        "..PPPPPP.."
+      ],
+      palette: { K: "#2a2a2a", H: "#b8b8b8", S: "#f0e6d2", E: "#2a2a2a", O: "#2f4f7a", T: "#f5d789", P: "#1a1a1a" }
+    },
+    boss_ceo: {
+      /* Same boss silhouette again, recolored with a maroon suit, gold tie,
+         and silver hair - reads as the higher-ranking "대표님" for the
+         sign-off/approval hazard. */
+      pixels: [
+        "H........H",
+        "..KKKKKK..",
+        "KHHHHHHHHK",
+        "KHHHHHHHHK",
+        "KSSVSSVSSK",
+        "KSSESSESSK",
+        "KSSSSSSSSK",
+        "KOOOTTOOOK",
+        "KOOOTTOOOK",
+        "..PPPPPP.."
+      ],
+      palette: { K: "#2a2a2a", H: "#d9d9d9", S: "#e6d9c2", V: "#2a2a2a", E: "#2a2a2a", O: "#5a1f2a", T: "#f5d789", P: "#1a1a1a" }
     }
   };
 
@@ -996,18 +1040,18 @@
       { label: "커피가 쏟아진 바닥은 지나갈 수 없다", icon: "coffee" },
       { label: "'회의 규칙' 1. 점심 직전 10분 회의는 못 피한다", icon: "clock" },
       { label: "메신저 알림은 무시할 수 없다", icon: "chat" },
-      { label: "상사의 '잠깐 얘기 좀'은 피할 수 없다", icon: "boss" }
+      { label: "상사의 '잠깐 얘기 좀'은 피할 수 없다", icon: "boss_talk" }
     ],
     spike: [
-      { label: "무한 야근은 위험하다", icon: "clock" },
-      { label: "'야근 규칙' 1. 사유 불문, 6시 이후는 야근이다", icon: "clock" },
+      { label: "무한 야근은 위험하다", icon: "moon" },
+      { label: "'야근 규칙' 1. 사유 불문, 6시 이후는 야근이다", icon: "bell" },
       { label: "압박 면담은 위험하다", icon: "boss" },
       { label: "코드 리뷰 지옥은 위험하다", icon: "bug" }
     ],
     door: [
       { label: "탕비실 문은 잠겨있다", icon: "lock" },
-      { label: "'결재 규칙' 1. 대표님 결재는 필수다", icon: "boss" },
-      { label: "회의실 문은 예약 없이 열 수 없다", icon: "lock" },
+      { label: "'결재 규칙' 1. 대표님 결재는 필수다", icon: "boss_ceo" },
+      { label: "회의실 문은 예약 없이 열 수 없다", icon: "stamp" },
       { label: "연차 신청 문은 잠겨있다", icon: "palm" }
     ]
   };
@@ -1204,9 +1248,11 @@
     }
   }
 
+  var CHARACTER_ICON_KEYS = { boss: true, boss_talk: true, boss_ceo: true };
+
   function renderObstacleIcon(iconKey) {
     var svg = ICON_SVGS[iconKey];
-    var className = iconKey === "boss" ? "obstacle-icon-character" : "obstacle-icon-single";
+    var className = CHARACTER_ICON_KEYS[iconKey] ? "obstacle-icon-character" : "obstacle-icon-single";
     return '<span class="' + className + '">' + svg + "</span>";
   }
 
@@ -1214,7 +1260,7 @@
     if (ch === "W") return renderObstacleIcon(state.ruleLabels.water.icon);
     if (ch === "S") {
       var sKey = state.ruleLabels.spike.icon;
-      if (sKey === "boss") return renderObstacleIcon(sKey);
+      if (CHARACTER_ICON_KEYS[sKey]) return renderObstacleIcon(sKey);
       var sIcon = ICON_SVGS[sKey];
       return (
         '<div class="obstacle-icon-row">' +
