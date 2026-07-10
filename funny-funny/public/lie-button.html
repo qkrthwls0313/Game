@@ -553,6 +553,21 @@
   .obstacle-icon-single { width: 46%; height: 46%; }
   .obstacle-icon-single svg { width: 100%; height: 100%; transition: filter 0.3s ease, opacity 0.3s ease; }
 
+  .obstacle-icon-character { width: 58%; height: 82%; }
+  .obstacle-icon-character svg {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 0 rgba(58, 46, 34, 0.35));
+    transition: filter 0.3s ease, opacity 0.3s ease;
+  }
+  .tile-water.passable .obstacle-icon-character svg,
+  .tile-spike.passable .obstacle-icon-character svg,
+  .tile-door.passable .obstacle-icon-character svg {
+    filter: grayscale(0.8) brightness(1.3);
+    opacity: 0.5;
+  }
+
   .tile-icon { font-size: 15px; pointer-events: none; user-select: none; }
 
   /* ---- PLAYER SPRITE ---- */
@@ -787,12 +802,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#5a4636", H: "#ffc2d1", S: "#fffaf3", E: "#3a2e22", O: "#a8c8f5", P: "#e0a8b8" }
+      palette: { K: "#5a4636", H: "#ffc2d1", S: "#fffaf3", E: "#3a2e22", O: "#a8c8f5", P: "#e0a8b8", B: "#ffb3c6" }
     },
     {
       id: "ari", name: "아리", desc: "병아리",
@@ -803,12 +818,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#7a5a1a", H: "#ffe066", S: "#fff4c2", E: "#3a2e22", O: "#ffb84d", P: "#ff8a3d" }
+      palette: { K: "#7a5a1a", H: "#ffe066", S: "#fff4c2", E: "#3a2e22", O: "#ffb84d", P: "#ff8a3d", B: "#ffb3c6" }
     },
     {
       id: "pinky", name: "핑키", desc: "돼지",
@@ -819,12 +834,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSNNSSSK",
+        "KBSNNSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#8a4a5a", H: "#ffb3c6", S: "#ffd9e0", E: "#3a2e22", O: "#ff8fab", P: "#e06b8a", N: "#e0688f" }
+      palette: { K: "#8a4a5a", H: "#ffb3c6", S: "#ffd9e0", E: "#3a2e22", O: "#ff8fab", P: "#e06b8a", N: "#e0688f", B: "#ff6fa0" }
     },
     {
       id: "lucy", name: "루시", desc: "고양이",
@@ -835,12 +850,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#5a5a6a", H: "#d9d9e0", S: "#f5f5fa", E: "#3a2e22", O: "#b8b8c9", P: "#8a8a9c" }
+      palette: { K: "#5a5a6a", H: "#d9d9e0", S: "#f5f5fa", E: "#3a2e22", O: "#b8b8c9", P: "#8a8a9c", B: "#ffb3c6" }
     },
     {
       id: "micky", name: "믹키", desc: "쥐",
@@ -851,12 +866,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#5a4028", H: "#c9a678", S: "#f0ddb8", E: "#3a2e22", O: "#a97847", P: "#8a5a35" }
+      palette: { K: "#5a4028", H: "#c9a678", S: "#f0ddb8", E: "#3a2e22", O: "#a97847", P: "#8a5a35", B: "#ffb3c6" }
     },
     {
       id: "mongyi", name: "몽이", desc: "원숭이",
@@ -867,12 +882,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#3f5a2f", H: "#a8d98f", S: "#f5e6c8", E: "#3a2e22", O: "#7fbf5f", P: "#5f9c47" }
+      palette: { K: "#3f5a2f", H: "#a8d98f", S: "#f5e6c8", E: "#3a2e22", O: "#7fbf5f", P: "#5f9c47", B: "#ffb3c6" }
     },
     {
       id: "blue", name: "블루", desc: "강아지",
@@ -883,12 +898,12 @@
         "KHHHHHHHHK",
         "KSSSSSSSSK",
         "KSSESSESSK",
-        "KSSSSSSSSK",
+        "KSBSSSSBSK",
         "KOOOOOOOOK",
         "KOOOOOOOOK",
         "..PPPPPP.."
       ],
-      palette: { K: "#1a2a4a", H: "#a8c8f0", S: "#e6f0ff", E: "#3a2e22", O: "#5b8def", P: "#2f4f9e", D: "#2f4f9e" }
+      palette: { K: "#1a2a4a", H: "#a8c8f0", S: "#e6f0ff", E: "#3a2e22", O: "#5b8def", P: "#2f4f9e", D: "#2f4f9e", B: "#ffb3c6" }
     }
   ];
 
@@ -929,6 +944,24 @@
     lock: {
       pixels: [".KKKK.", "KW..WK", "KW..WK", "KKKKKK", "KYYYYK", "KKKKKK"],
       palette: { K: "#3a2e22", W: "#c9c9d9", Y: "#e0ac3c" }
+    },
+    boss: {
+      /* A stern "boss" figure in a suit, blocking the way - the visual
+         stand-in for people-driven office hazards (an unavoidable chat,
+         a pressure meeting, mandatory sign-off). Original pixel design. */
+      pixels: [
+        "H........H",
+        "..KKKKKK..",
+        "KHHHHHHHHK",
+        "KHHHHHHHHK",
+        "KSSVSSVSSK",
+        "KSSESSESSK",
+        "KSSSSSSSSK",
+        "KOOOTTOOOK",
+        "KOOOTTOOOK",
+        "..PPPPPP.."
+      ],
+      palette: { K: "#2a2a2a", H: "#8a8a8a", S: "#e6d9c2", V: "#2a2a2a", E: "#2a2a2a", O: "#2f2f3a", T: "#c94f4f", P: "#1a1a1a" }
     }
   };
 
@@ -963,17 +996,17 @@
       { label: "커피가 쏟아진 바닥은 지나갈 수 없다", icon: "coffee" },
       { label: "'회의 규칙' 1. 점심 직전 10분 회의는 못 피한다", icon: "clock" },
       { label: "메신저 알림은 무시할 수 없다", icon: "chat" },
-      { label: "상사의 '잠깐 얘기 좀'은 피할 수 없다", icon: "sweat" }
+      { label: "상사의 '잠깐 얘기 좀'은 피할 수 없다", icon: "boss" }
     ],
     spike: [
       { label: "무한 야근은 위험하다", icon: "clock" },
       { label: "'야근 규칙' 1. 사유 불문, 6시 이후는 야근이다", icon: "clock" },
-      { label: "압박 면담은 위험하다", icon: "sweat" },
+      { label: "압박 면담은 위험하다", icon: "boss" },
       { label: "코드 리뷰 지옥은 위험하다", icon: "bug" }
     ],
     door: [
       { label: "탕비실 문은 잠겨있다", icon: "lock" },
-      { label: "'결재 규칙' 1. 대표님 결재는 필수다", icon: "stamp" },
+      { label: "'결재 규칙' 1. 대표님 결재는 필수다", icon: "boss" },
       { label: "회의실 문은 예약 없이 열 수 없다", icon: "lock" },
       { label: "연차 신청 문은 잠겨있다", icon: "palm" }
     ]
@@ -1171,13 +1204,18 @@
     }
   }
 
+  function renderObstacleIcon(iconKey) {
+    var svg = ICON_SVGS[iconKey];
+    var className = iconKey === "boss" ? "obstacle-icon-character" : "obstacle-icon-single";
+    return '<span class="' + className + '">' + svg + "</span>";
+  }
+
   function tileIcon(ch) {
-    if (ch === "W") {
-      var wIcon = ICON_SVGS[state.ruleLabels.water.icon];
-      return '<span class="obstacle-icon-single">' + wIcon + "</span>";
-    }
+    if (ch === "W") return renderObstacleIcon(state.ruleLabels.water.icon);
     if (ch === "S") {
-      var sIcon = ICON_SVGS[state.ruleLabels.spike.icon];
+      var sKey = state.ruleLabels.spike.icon;
+      if (sKey === "boss") return renderObstacleIcon(sKey);
+      var sIcon = ICON_SVGS[sKey];
       return (
         '<div class="obstacle-icon-row">' +
         '<span class="icon-cell">' + sIcon + "</span>" +
@@ -1186,10 +1224,7 @@
         "</div>"
       );
     }
-    if (ch === "D") {
-      var dIcon = ICON_SVGS[state.ruleLabels.door.icon];
-      return '<span class="obstacle-icon-single">' + dIcon + "</span>";
-    }
+    if (ch === "D") return renderObstacleIcon(state.ruleLabels.door.icon);
     if (ch === "E") return '<span class="exit-tower">' + TOWER_SVG + "</span>";
     return "";
   }
