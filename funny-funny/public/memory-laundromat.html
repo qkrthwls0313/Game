@@ -34,7 +34,7 @@
   }
 
   body {
-    background: linear-gradient(135deg, var(--lavender) 0%, #f3eefc 35%, var(--mint) 100%);
+    background: linear-gradient(135deg, #e0e5ff 0%, #f0f7ff 50%, #e6fff9 100%);
     min-height: 100vh;
     padding: 28px 16px 60px;
   }
@@ -51,6 +51,7 @@
     font-weight: 800;
     letter-spacing: 1px;
     color: var(--ink);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(179, 229, 252, 0.4);
   }
 
   .title-bar span {
@@ -71,11 +72,12 @@
   }
 
   .panel {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 26px;
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(6px);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 22px;
     display: flex;
     flex-direction: column;
@@ -171,6 +173,15 @@
   .dialogue-text.done::after { content: ""; }
 
   @keyframes blink { 50% { opacity: 0; } }
+
+  .char-fade {
+    display: inline-block;
+    white-space: pre;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .char-fade.visible { opacity: 1; transform: translateY(0); }
 
   .item-tag {
     margin-top: 16px;
@@ -320,13 +331,7 @@
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #ffffff, #bfe9ff 60%, #8fd4f5 100%);
     opacity: 0.95;
-    animation: bubbleFloat 1.4s ease-out forwards;
-  }
-  @keyframes bubbleFloat {
-    to {
-      transform: translate(var(--dx), var(--dy)) scale(1.3);
-      opacity: 0;
-    }
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
   }
 
   .sparkle-burst {
@@ -359,6 +364,11 @@
     padding-top: 10px;
   }
 
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
   .detergent-btn {
     flex: 1;
     max-width: 150px;
@@ -375,11 +385,18 @@
     font-weight: 800;
     color: #ffffff;
     box-shadow: 0 8px 16px rgba(120, 100, 160, 0.22);
-    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease;
+    animation: float 3.2s ease-in-out infinite;
   }
-  .detergent-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(120, 100, 160, 0.28); }
-  .detergent-btn:active:not(:disabled) { transform: translateY(0); }
-  .detergent-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
+  .detergent-btn:nth-child(2) { animation-delay: 0.3s; }
+  .detergent-btn:nth-child(3) { animation-delay: 0.6s; }
+  .detergent-btn:hover:not(:disabled) {
+    animation-play-state: paused;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 14px 24px rgba(120, 100, 160, 0.3);
+  }
+  .detergent-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+  .detergent-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); animation-play-state: paused; }
 
   .btn-comfort { background: linear-gradient(160deg, var(--pink), var(--pink-deep)); }
   .btn-time { background: linear-gradient(160deg, var(--purple), var(--purple-deep)); }
@@ -444,9 +461,10 @@
     cursor: pointer;
     background: linear-gradient(135deg, var(--purple), var(--purple-deep));
     color: #fff;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
   }
-  .buy-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .buy-btn:hover:not(:disabled) { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 16px rgba(120, 100, 160, 0.28); }
+  .buy-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
   .buy-btn:disabled {
     background: #dcd6e8;
     color: #ffffff;
@@ -588,19 +606,43 @@
             <stop offset="0%" stop-color="#ffffff"/>
             <stop offset="100%" stop-color="#f1ecfb"/>
           </linearGradient>
-          <radialGradient id="drumGrad" cx="40%" cy="35%" r="70%">
-            <stop offset="0%" stop-color="#e9f6ff"/>
-            <stop offset="70%" stop-color="#cfe6f5"/>
-            <stop offset="100%" stop-color="#b7d7ec"/>
+          <linearGradient id="chromeRim" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="22%" stop-color="#c7d1e2"/>
+            <stop offset="48%" stop-color="#f6f9fc"/>
+            <stop offset="72%" stop-color="#a6b1c4"/>
+            <stop offset="100%" stop-color="#eef2f8"/>
+          </linearGradient>
+          <radialGradient id="drumGrad" cx="38%" cy="32%" r="75%">
+            <stop offset="0%" stop-color="#f3fbff"/>
+            <stop offset="55%" stop-color="#cfe6f5"/>
+            <stop offset="100%" stop-color="#9dc2dc"/>
           </radialGradient>
+          <radialGradient id="drumInnerShadow" cx="50%" cy="50%" r="52%">
+            <stop offset="58%" stop-color="#28345a" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#28345a" stop-opacity="0.32"/>
+          </radialGradient>
+          <linearGradient id="glossyReflection" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="42%" stop-color="#ffffff" stop-opacity="0.4"/>
+            <stop offset="58%" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+          <clipPath id="drumClip">
+            <circle cx="150" cy="150" r="92"/>
+          </clipPath>
         </defs>
         <rect x="14" y="14" width="272" height="272" rx="36" fill="url(#bodyGrad)" stroke="#e1d6f7" stroke-width="4"/>
         <rect x="34" y="30" width="232" height="26" rx="13" fill="#f6f1ff" stroke="#e1d6f7" stroke-width="2"/>
         <circle cx="52" cy="43" r="7" fill="#ffb8c9"/>
         <circle cx="76" cy="43" r="7" fill="#c6a9f0"/>
         <circle cx="100" cy="43" r="7" fill="#93e3cf"/>
-        <circle cx="150" cy="150" r="108" fill="#dcd2f4" stroke="#cbb9ee" stroke-width="6"/>
+        <circle cx="150" cy="150" r="108" fill="#dcd2f4" stroke="url(#chromeRim)" stroke-width="8"/>
         <circle cx="150" cy="150" r="92" fill="url(#drumGrad)" stroke="#a9c8dd" stroke-width="4"/>
+        <circle cx="150" cy="150" r="92" fill="url(#drumInnerShadow)"/>
+        <g clip-path="url(#drumClip)">
+          <rect x="40" y="40" width="220" height="220" fill="url(#glossyReflection)" transform="rotate(-35 150 150)"/>
+        </g>
         <path d="M 90 100 A 85 85 0 0 1 210 100" stroke="#ffffff" stroke-width="6" fill="none" opacity="0.6" stroke-linecap="round"/>
         <circle cx="252" cy="76" r="6" fill="#93e3cf"/>
       </svg>
@@ -786,13 +828,20 @@
       clearInterval(state.typeInterval);
       state.typeInterval = null;
     }
-    targetEl.textContent = "";
+    targetEl.innerHTML = "";
     targetEl.classList.remove("done");
+    var chars = Array.from(text);
     var i = 0;
     state.typeInterval = setInterval(function () {
-      targetEl.textContent = text.slice(0, i + 1);
+      var span = document.createElement("span");
+      span.className = "char-fade";
+      span.textContent = chars[i];
+      targetEl.appendChild(span);
+      window.requestAnimationFrame(function () {
+        span.classList.add("visible");
+      });
       i++;
-      if (i >= text.length) {
+      if (i >= chars.length) {
         clearInterval(state.typeInterval);
         state.typeInterval = null;
         targetEl.classList.add("done");
@@ -970,25 +1019,59 @@
     }, 5000);
   }
 
+  var bubbleStyleSheet = (function () {
+    var styleEl = document.createElement("style");
+    styleEl.id = "bubbleDynamicStyles";
+    document.head.appendChild(styleEl);
+    return styleEl.sheet;
+  })();
+  var bubbleCounter = 0;
+
   function spawnBubbles(count) {
     for (var i = 0; i < count; i++) {
-      var b = document.createElement("div");
-      b.className = "bubble-particle";
+      bubbleCounter++;
+      var name = "bubbleFloat_" + bubbleCounter;
       var angle = Math.random() * Math.PI * 2;
       var dist = 60 + Math.random() * 70;
       var dx = Math.cos(angle) * dist;
       var dy = Math.sin(angle) * dist - 20;
-      b.style.setProperty("--dx", dx + "px");
-      b.style.setProperty("--dy", dy + "px");
+      var wobbleX = (Math.random() - 0.5) * 34;
+      var wobbleY = (Math.random() - 0.5) * 22;
+      var duration = (1.1 + Math.random() * 0.7);
+
+      var keyframeRule =
+        "@keyframes " + name + " {" +
+        "0% { transform: translate(0, 0) scale(0.5); opacity: 0.9; }" +
+        "35% { transform: translate(" + (dx * 0.35 + wobbleX).toFixed(1) + "px, " + (dy * 0.35 + wobbleY).toFixed(1) + "px) scale(0.85); opacity: 1; }" +
+        "70% { transform: translate(" + (dx * 0.78 - wobbleX * 0.4).toFixed(1) + "px, " + (dy * 0.78).toFixed(1) + "px) scale(1.05); opacity: 0.85; }" +
+        "100% { transform: translate(" + dx.toFixed(1) + "px, " + dy.toFixed(1) + "px) scale(1.3); opacity: 0; }" +
+        "}";
+
+      try {
+        bubbleStyleSheet.insertRule(keyframeRule, bubbleStyleSheet.cssRules.length);
+      } catch (e) {
+        /* ignore malformed rule edge-cases */
+      }
+
+      var b = document.createElement("div");
+      b.className = "bubble-particle";
       b.style.left = "50%";
       b.style.top = "50%";
+      b.style.animation = name + " " + duration.toFixed(2) + "s cubic-bezier(0.4, 0, 0.2, 1) forwards";
       b.style.animationDelay = (Math.random() * 0.3) + "s";
       el.drumOverlay.appendChild(b);
-      (function (bubble) {
+
+      (function (bubble, ruleName, totalDelayMs) {
         window.setTimeout(function () {
           if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
-        }, 1800);
-      })(b);
+          for (var r = bubbleStyleSheet.cssRules.length - 1; r >= 0; r--) {
+            if (bubbleStyleSheet.cssRules[r].name === ruleName) {
+              bubbleStyleSheet.deleteRule(r);
+              break;
+            }
+          }
+        }, totalDelayMs);
+      })(b, name, duration * 1000 + 400);
     }
   }
 
