@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Lie Button · 규칙 변환 퍼즐</title>
+<style>
+  :root {
+    --ink: #3d3a56;
+    --ink-soft: #726f92;
+    --panel-bg: rgba(255, 255, 255, 0.5);
+    --panel-border: rgba(255, 255, 255, 0.7);
+    --purple: #b39ce0;
+    --purple-deep: #8c6fd1;
+    --blue: #8ecbf5;
+    --blue-deep: #4f9bd8;
+    --pink: #f5a3bd;
+    --pink-deep: #e0688f;
+    --amber: #f3c98a;
+    --amber-deep: #d99a3f;
+    --green: #8fe3c0;
+    --green-deep: #4fb98c;
+    --shadow: 0 8px 28px rgba(90, 80, 150, 0.14);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI",
+      system-ui, sans-serif;
+    color: var(--ink);
+  }
+
+  body {
+    background: linear-gradient(135deg, #e3e8ff 0%, #f1eefc 45%, #e3fbf3 100%);
+    min-height: 100vh;
+    padding: 20px 14px 40px;
+  }
+
+  h1, h2, h3, p { margin: 0; }
+  button { font-family: inherit; }
+  ul { list-style: none; margin: 0; padding: 0; }
+
+  .app { max-width: 980px; margin: 0 auto; }
+
+  .title-bar { text-align: center; margin-bottom: 18px; }
+  .title-bar h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 18px rgba(179, 156, 224, 0.35);
+  }
+  .title-bar span {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+    letter-spacing: 1.5px;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 18px;
+  }
+
+  /* ---------- RULES PANEL ---------- */
+  .stage-info {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+
+  .rules-panel h2 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--ink-soft);
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+
+  .rule-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+
+  .rule-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1.5px solid rgba(179, 156, 224, 0.25);
+    border-radius: 14px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease, background 0.25s ease;
+  }
+  .rule-btn:hover { transform: translateY(-2px); border-color: var(--purple-deep); }
+  .rule-btn:active { transform: translateY(0) scale(0.98); }
+
+  .rule-checkbox {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 2px solid var(--purple-deep);
+    background: #fff;
+    position: relative;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .rule-item.lied .rule-btn {
+    background: linear-gradient(135deg, #fff0f0, #ffe4ea);
+    border-color: var(--pink-deep);
+  }
+  .rule-item.lied .rule-checkbox {
+    background: var(--pink-deep);
+    border-color: var(--pink-deep);
+  }
+  .rule-item.lied .rule-checkbox::after {
+    content: "✕";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .rule-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .rule-label { font-size: 13px; font-weight: 700; line-height: 1.35; }
+  .rule-status {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+  .rule-item.lied .rule-status { color: var(--pink-deep); }
+
+  .rule-hint {
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+
+  .legend { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-soft); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 5px; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+
+  .action-btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--purple), var(--purple-deep));
+    box-shadow: 0 8px 18px rgba(140, 111, 209, 0.3);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+  }
+  .action-btn:hover { transform: translateY(-2px) scale(1.02); }
+  .action-btn:active { transform: translateY(0) scale(0.98); }
+
+  /* ---------- MAP PANEL ---------- */
+  .map-panel { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  .grid-wrap {
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 1 / 1;
+    position: relative;
+  }
+
+  .grid {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6), 0 10px 26px rgba(90, 80, 150, 0.18);
+    background: #f4f1fb;
+  }
+
+  .grid.shake { animation: gridShake 0.35s ease; }
+  @keyframes gridShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  .cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(9px, 2.2vw, 15px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+  }
+
+  .tile-wall { background: linear-gradient(160deg, #cfc9e6, #b9b1d9); box-shadow: inset 0 0 6px rgba(60, 50, 100, 0.25); }
+  .tile-floor { background: #faf9ff; }
+  .tile-exit {
+    background: linear-gradient(160deg, #b9f3da, var(--green));
+    box-shadow: 0 0 10px rgba(79, 185, 140, 0.55);
+    animation: exitPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes exitPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(79, 185, 140, 0.4); }
+    50% { box-shadow: 0 0 16px rgba(79, 185, 140, 0.8); }
+  }
+
+  .tile-water { background: linear-gradient(160deg, #bfe2fb, var(--blue-deep)); transition: background 0.3s ease, opacity 0.3s ease; }
+  .tile-water.passable { background: linear-gradient(160deg, #eaf6ff, #cfe9fb); opacity: 0.85; box-shadow: inset 0 0 0 2px rgba(79, 155, 216, 0.35); }
+
+  .tile-spike { background: linear-gradient(160deg, #fbc6d6, var(--pink-deep)); transition: background 0.3s ease, opacity 0.3s ease; }
+  .tile-spike.passable { background: linear-gradient(160deg, #f7f2fb, #e4d9ee); opacity: 0.85; }
+  .tile-spike .tile-icon { color: #8a2f4c; filter: drop-shadow(0 1px 0 rgba(255,255,255,0.4)); transition: color 0.3s ease, opacity 0.3s ease; }
+  .tile-spike.passable .tile-icon { color: #a8a0c0; opacity: 0.6; }
+
+  .tile-door { background: linear-gradient(160deg, #f6dca8, var(--amber-deep)); transition: background 0.3s ease, opacity 0.3s ease; }
+  .tile-door.passable { background: linear-gradient(160deg, #fef7e8, #f5e5c2); opacity: 0.85; }
+
+  .tile-icon { font-size: clamp(10px, 2.6vw, 17px); pointer-events: none; user-select: none; }
+
+  .player {
+    position: absolute;
+    width: 10%;
+    height: 10%;
+    left: 0;
+    top: 0;
+    z-index: 5;
+    transition: left 0.15s ease, top 0.15s ease;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .player.no-anim { transition: none !important; }
+  .player-dot {
+    width: 62%;
+    height: 62%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #fff, var(--purple) 55%, var(--purple-deep) 100%);
+    box-shadow: 0 3px 8px rgba(140, 111, 209, 0.55), 0 0 0 3px rgba(255,255,255,0.6);
+  }
+
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(2, 52px);
+    gap: 6px;
+    justify-content: center;
+  }
+  .dpad button {
+    border: none;
+    border-radius: 14px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--purple-deep);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dpad button:hover { transform: translateY(-2px) scale(1.05); }
+  .dpad button:active { transform: translateY(0) scale(0.94); }
+  .dpad-up { grid-column: 2; grid-row: 1; }
+  .dpad-left { grid-column: 1; grid-row: 2; }
+  .dpad-down { grid-column: 2; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+
+  .kbd-hint { font-size: 11.5px; color: var(--ink-soft); text-align: center; }
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(60, 50, 90, 0.4);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+  .modal-card {
+    background: linear-gradient(160deg, #ffffff, #f4f0ff);
+    border-radius: 26px;
+    padding: 32px 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 26px 50px rgba(60, 40, 90, 0.3);
+    transform: translateY(20px) scale(0.96);
+    transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  .modal-overlay.visible .modal-card { transform: translateY(0) scale(1); }
+  .modal-card h2 { font-size: 19px; font-weight: 800; margin-bottom: 10px; color: var(--purple-deep); }
+  .modal-card p { font-size: 13.5px; line-height: 1.7; color: var(--ink); margin-bottom: 20px; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="title-bar">
+    <h1>🔀 Lie Button</h1>
+    <span>규칙을 거짓으로 바꿔, 진실 너머로 나아가라</span>
+  </div>
+
+  <div class="layout">
+    <aside class="panel rules-panel">
+      <div class="stage-info">STAGE <span id="stageNum">1</span> / 5</div>
+      <h2>규칙 (RULES)</h2>
+      <ul class="rule-list" id="ruleList"></ul>
+      <p class="rule-hint">규칙을 클릭하면 그 규칙만 <b>거짓(LIE)</b>이 됩니다. 다른 규칙을 누르면 이전 규칙은 다시 참으로 돌아가요.</p>
+
+      <div class="legend">
+        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(160deg,#cfc9e6,#b9b1d9);"></span>벽 (통과 불가)</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(160deg,#bfe2fb,#4f9bd8);"></span>물</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(160deg,#fbc6d6,#e0688f);"></span>가시</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(160deg,#f6dca8,#d99a3f);"></span>문</div>
+        <div class="legend-row"><span class="legend-swatch" style="background:linear-gradient(160deg,#b9f3da,#8fe3c0);"></span>출구</div>
+      </div>
+
+      <button id="resetBtn" class="action-btn">🔄 이 스테이지 재시작</button>
+    </aside>
+
+    <main class="panel map-panel">
+      <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+      </div>
+      <div class="dpad" id="dpad">
+        <button class="dpad-up" data-dir="up">▲</button>
+        <button class="dpad-left" data-dir="left">◀</button>
+        <button class="dpad-down" data-dir="down">▼</button>
+        <button class="dpad-right" data-dir="right">▶</button>
+      </div>
+      <p class="kbd-hint">방향키 또는 WASD로 이동할 수 있어요.</p>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+    <button id="modalBtn" class="action-btn"></button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- DATA ---------------- */
+
+  var rules = [
+    { id: "water", label: "물은 지나갈 수 없다", tile: "W" },
+    { id: "spike", label: "가시는 위험하다", tile: "S" },
+    { id: "door", label: "문은 잠겨있다", tile: "D" }
+  ];
+
+  var stages = [
+    {
+      grid: [
+        "##########",
+        "#P.......#",
+        "########.#",
+        "#..WWW...#",
+        "#.########",
+        "#........#",
+        "########.#",
+        "#E.......#",
+        "##########",
+        "##########"
+      ]
+    },
+    {
+      grid: [
+        "##########",
+        "#P.......#",
+        "########.#",
+        "#........#",
+        "#.########",
+        "#..SSS...#",
+        "########.#",
+        "#E.......#",
+        "##########",
+        "##########"
+      ]
+    },
+    {
+      grid: [
+        "##########",
+        "#P.......#",
+        "########.#",
+        "#........#",
+        "#.########",
+        "#........#",
+        "########.#",
+        "#E..DDD..#",
+        "##########",
+        "##########"
+      ]
+    },
+    {
+      grid: [
+        "##########",
+        "#P.......#",
+        "########.#",
+        "#..WWW...#",
+        "#.########",
+        "#..SSS...#",
+        "########.#",
+        "#E.......#",
+        "##########",
+        "##########"
+      ]
+    },
+    {
+      grid: [
+        "##########",
+        "#P.......#",
+        "########.#",
+        "#..WWW...#",
+        "#.########",
+        "#..SSS...#",
+        "########.#",
+        "#E..DDD..#",
+        "##########",
+        "##########"
+      ]
+    }
+  ];
+
+  /* ---------------- STATE ---------------- */
+
+  var state = {
+    stageIndex: 0,
+    liedRuleId: null,
+    grid: [],
+    playerPos: { r: 0, c: 0 },
+    locked: false
+  };
+
+  var el = {
+    stageNum: document.getElementById("stageNum"),
+    ruleList: document.getElementById("ruleList"),
+    grid: document.getElementById("grid"),
+    resetBtn: document.getElementById("resetBtn"),
+    dpad: document.getElementById("dpad"),
+    modalOverlay: document.getElementById("modalOverlay"),
+    modalTitle: document.getElementById("modalTitle"),
+    modalText: document.getElementById("modalText"),
+    modalBtn: document.getElementById("modalBtn")
+  };
+
+  var playerEl = null;
+
+  /* ---------------- RULE / PASSABILITY LOGIC ---------------- */
+
+  function isPassable(ch) {
+    if (ch === "#") return false;
+    if (ch === "W") return state.liedRuleId === "water";
+    if (ch === "S") return state.liedRuleId === "spike";
+    if (ch === "D") return state.liedRuleId === "door";
+    return true;
+  }
+
+  function tileClass(ch) {
+    switch (ch) {
+      case "#": return "tile-wall";
+      case ".": return "tile-floor";
+      case "E": return "tile-exit";
+      case "W": return "tile-water" + (isPassable(ch) ? " passable" : "");
+      case "S": return "tile-spike" + (isPassable(ch) ? " passable" : "");
+      case "D": return "tile-door" + (isPassable(ch) ? " passable" : "");
+      default: return "tile-floor";
+    }
+  }
+
+  function tileIcon(ch) {
+    if (ch === "S") return '<span class="tile-icon">▲</span>';
+    if (ch === "D") return '<span class="tile-icon">' + (isPassable(ch) ? "🔓" : "🔒") + "</span>";
+    if (ch === "E") return '<span class="tile-icon">🚩</span>';
+    return "";
+  }
+
+  /* ---------------- RENDER ---------------- */
+
+  function renderGrid() {
+    el.grid.innerHTML = "";
+    for (var r = 0; r < 10; r++) {
+      for (var c = 0; c < 10; c++) {
+        var ch = state.grid[r][c];
+        var cell = document.createElement("div");
+        cell.className = "cell " + tileClass(ch);
+        cell.innerHTML = tileIcon(ch);
+        el.grid.appendChild(cell);
+      }
+    }
+    if (!playerEl) {
+      playerEl = document.createElement("div");
+      playerEl.className = "player";
+      playerEl.innerHTML = '<div class="player-dot"></div>';
+    }
+    el.grid.appendChild(playerEl);
+  }
+
+  function updatePlayerPosition(instant) {
+    if (instant) playerEl.classList.add("no-anim");
+    playerEl.style.left = (state.playerPos.c * 10) + "%";
+    playerEl.style.top = (state.playerPos.r * 10) + "%";
+    if (instant) {
+      void playerEl.offsetWidth;
+      playerEl.classList.remove("no-anim");
+    }
+  }
+
+  function renderRules() {
+    el.ruleList.innerHTML = "";
+    rules.forEach(function (rule) {
+      var lied = state.liedRuleId === rule.id;
+      var li = document.createElement("li");
+      li.className = "rule-item" + (lied ? " lied" : "");
+
+      var btn = document.createElement("button");
+      btn.className = "rule-btn";
+      btn.type = "button";
+      btn.innerHTML =
+        '<span class="rule-checkbox"></span>' +
+        '<span class="rule-text">' +
+        '<span class="rule-label">' + rule.label + "</span>" +
+        '<span class="rule-status">' + (lied ? "거짓 (LIE)" : "참 (TRUE)") + "</span>" +
+        "</span>";
+      btn.addEventListener("click", function () {
+        toggleRule(rule.id);
+      });
+
+      li.appendChild(btn);
+      el.ruleList.appendChild(li);
+    });
+  }
+
+  function toggleRule(id) {
+    if (state.locked) return;
+    state.liedRuleId = (state.liedRuleId === id) ? null : id;
+    renderRules();
+    renderGrid();
+    updatePlayerPosition(true);
+  }
+
+  /* ---------------- STAGE FLOW ---------------- */
+
+  function loadStage(index) {
+    state.stageIndex = index;
+    state.liedRuleId = null;
+    state.locked = false;
+
+    var rows = stages[index].grid.slice();
+    var gridChars = rows.map(function (row) { return row.split(""); });
+
+    for (var r = 0; r < 10; r++) {
+      for (var c = 0; c < 10; c++) {
+        if (gridChars[r][c] === "P") {
+          state.playerPos = { r: r, c: c };
+          gridChars[r][c] = ".";
+        }
+      }
+    }
+    state.grid = gridChars;
+
+    el.stageNum.textContent = index + 1;
+    renderRules();
+    renderGrid();
+    updatePlayerPosition(true);
+  }
+
+  function shakeBlocked() {
+    el.grid.classList.remove("shake");
+    void el.grid.offsetWidth;
+    el.grid.classList.add("shake");
+  }
+
+  function move(dr, dc) {
+    if (state.locked) return;
+    var nr = state.playerPos.r + dr;
+    var nc = state.playerPos.c + dc;
+    if (nr < 0 || nr > 9 || nc < 0 || nc > 9) return;
+
+    var ch = state.grid[nr][nc];
+    if (!isPassable(ch)) {
+      shakeBlocked();
+      return;
+    }
+
+    state.playerPos = { r: nr, c: nc };
+    updatePlayerPosition(false);
+
+    if (ch === "E") {
+      onStageClear();
+    }
+  }
+
+  function onStageClear() {
+    state.locked = true;
+    if (state.stageIndex < stages.length - 1) {
+      showModal(
+        "스테이지 클리어! 🎉",
+        (state.stageIndex + 1) + "단계를 통과했습니다. 다음 규칙 퍼즐이 기다리고 있어요.",
+        "다음 스테이지로 →",
+        function () {
+          hideModal();
+          loadStage(state.stageIndex + 1);
+        }
+      );
+    } else {
+      showModal(
+        "축하합니다! 🏆",
+        "모든 5개 스테이지를 클리어했습니다. 당신은 진짜 'Lie Button' 마스터입니다!",
+        "처음부터 다시하기",
+        function () {
+          hideModal();
+          loadStage(0);
+        }
+      );
+    }
+  }
+
+  /* ---------------- MODAL ---------------- */
+
+  function showModal(title, text, btnLabel, onClick) {
+    el.modalTitle.textContent = title;
+    el.modalText.textContent = text;
+    el.modalBtn.textContent = btnLabel;
+    el.modalBtn.onclick = onClick;
+    el.modalOverlay.classList.add("visible");
+  }
+
+  function hideModal() {
+    el.modalOverlay.classList.remove("visible");
+  }
+
+  /* ---------------- INPUT ---------------- */
+
+  var keyMap = {
+    ArrowUp: [-1, 0], w: [-1, 0], W: [-1, 0],
+    ArrowDown: [1, 0], s: [1, 0], S: [1, 0],
+    ArrowLeft: [0, -1], a: [0, -1], A: [0, -1],
+    ArrowRight: [0, 1], d: [0, 1], D: [0, 1]
+  };
+
+  var dirDeltas = {
+    up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1]
+  };
+
+  function init() {
+    document.addEventListener("keydown", function (e) {
+      var delta = keyMap[e.key];
+      if (!delta) return;
+      if (e.key.indexOf("Arrow") === 0) e.preventDefault();
+      move(delta[0], delta[1]);
+    });
+
+    el.dpad.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[data-dir]");
+      if (!btn) return;
+      var delta = dirDeltas[btn.dataset.dir];
+      if (delta) move(delta[0], delta[1]);
+    });
+
+    el.resetBtn.addEventListener("click", function () {
+      hideModal();
+      loadStage(state.stageIndex);
+    });
+
+    loadStage(0);
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
