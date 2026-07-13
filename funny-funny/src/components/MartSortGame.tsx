@@ -6,6 +6,7 @@ type RealItemType = "cola" | "milk" | "bread";
 type ItemType = RealItemType | "trash";
 type Slot = ItemType[];
 type GameOverReason = "stuck" | "timeup" | null;
+type ToolMode = "none" | "broom";
 
 const SLOT_COUNT = 5;
 const SLOT_CAPACITY = 3;
@@ -34,6 +35,10 @@ const COMBO_WINDOW_MS = 5000;
 const GAME_DURATION = 60;
 const TIME_BONUS_PER_CLEAR = 5;
 const HAZARD_INTERVAL = 45;
+const FEVER_COMBO_THRESHOLD = 5;
+const FEVER_DURATION_MS = 8000;
+const BROOM_FREE_USES = 1;
+const SHUFFLE_FREE_USES = 2;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -90,6 +95,24 @@ function spawnTrash(slots: Slot[]) {
   if (emptyIdx.length === 0) return;
   const pick = emptyIdx[Math.floor(Math.random() * emptyIdx.length)];
   slots[pick] = ["trash"];
+}
+
+type ClearResult = { count: number; type: ItemType } | null;
+
+function getClearResult(dst: Slot, feverActive: boolean): ClearResult {
+  if (dst.length === 0) return null;
+  const top = dst[dst.length - 1];
+  if (top === "trash") return null;
+  if (feverActive) {
+    if (dst.length >= 2 && dst[dst.length - 2] === top) {
+      return { count: 2, type: top };
+    }
+    return null;
+  }
+  if (dst.length === SLOT_CAPACITY && dst.every((t) => t === dst[0])) {
+    return { count: SLOT_CAPACITY, type: dst[0] };
+  }
+  return null;
 }
 
 const COLORS = {
@@ -182,7 +205,110 @@ function timeBarColor(fraction: number): string {
   return lerpColor(red, yellow, fraction / 0.5);
 }
 
-type Clearing = { index: number; type: ItemType; start: number } | null;
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rot: number;
+  vr: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  w: number;
+  h: number;
+};
+
+const PARTICLE_COLORS = ["#FFFFFF", "#FFF6C2", "#FFD700"];
+
+function spawnParticles(list: Particle[], x: number, y: number) {
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 80 + Math.random() * 160;
+    list.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 120,
+      rot: Math.random() * Math.PI * 2,
+      vr: (Math.random() - 0.5) * 10,
+      life: 700,
+      maxLife: 700,
+      color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+      w: 6 + Math.random() * 4,
+      h: 4 + Math.random() * 3,
+    });
+  }
+}
+
+type AudioCtxWindow = Window & { webkitAudioContext?: typeof AudioContext };
+
+function ensureAudioContext(
+  ref: React.MutableRefObject<AudioContext | null>
+): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!ref.current) {
+    const AudioCtxClass =
+      window.AudioContext || (window as AudioCtxWindow).webkitAudioContext;
+    if (!AudioCtxClass) return null;
+    ref.current = new AudioCtxClass();
+  }
+  if (ref.current.state === "suspended") {
+    ref.current.resume().catch(() => {});
+  }
+  return ref.current;
+}
+
+function playPluck(ctx: AudioContext) {
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(600, t0);
+  osc.frequency.exponentialRampToValueAtTime(300, t0 + 0.08);
+  gain.gain.setValueAtTime(0.15, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.1);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + 0.12);
+}
+
+function playClear(ctx: AudioContext) {
+  const t0 = ctx.currentTime;
+  [0, 0.09].forEach((offset) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(1800, t0 + offset);
+    gain.gain.setValueAtTime(0.0001, t0 + offset);
+    gain.gain.exponentialRampToValueAtTime(0.12, t0 + offset + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + offset + 0.08);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0 + offset);
+    osc.stop(t0 + offset + 0.09);
+  });
+}
+
+function playGameOver(ctx: AudioContext) {
+  const t0 = ctx.currentTime;
+  const notes = [440, 392, 349, 293];
+  notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    const detune = (Math.random() - 0.5) * 30;
+    osc.frequency.setValueAtTime(freq, t0 + i * 0.18);
+    osc.detune.setValueAtTime(detune, t0 + i * 0.18);
+    gain.gain.setValueAtTime(0.0001, t0 + i * 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.15, t0 + i * 0.18 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.18 + 0.16);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0 + i * 0.18);
+    osc.stop(t0 + i * 0.18 + 0.18);
+  });
+}
+
+type Clearing = { index: number; count: number; start: number } | null;
 type ComboPopup = { combo: number; start: number } | null;
 
 export default function MartSortGame() {
@@ -191,6 +317,9 @@ export default function MartSortGame() {
   const selectedRef = useRef<number | null>(null);
   const clearingRef = useRef<Clearing>(null);
   const clearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const toolModeRef = useRef<ToolMode>("none");
 
   const endedRef = useRef(false);
   const timeLeftRef = useRef(GAME_DURATION);
@@ -199,17 +328,24 @@ export default function MartSortGame() {
   const comboRef = useRef(0);
   const comboDeadlineRef = useRef<number | null>(null);
   const comboPopupRef = useRef<ComboPopup>(null);
+  const feverUntilRef = useRef<number | null>(null);
 
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
   const [displayTime, setDisplayTime] = useState(GAME_DURATION);
+  const [feverActive, setFeverActive] = useState(false);
+  const [toolMode, setToolMode] = useState<ToolMode>("none");
+  const [broomCount, setBroomCount] = useState(BROOM_FREE_USES);
+  const [shuffleCount, setShuffleCount] = useState(SHUFFLE_FREE_USES);
 
   const endGame = useCallback((reason: "stuck" | "timeup") => {
     if (endedRef.current) return;
     endedRef.current = true;
     setGameOverReason(reason);
     setGameOver(true);
+    const ctx = ensureAudioContext(audioCtxRef);
+    if (ctx) playGameOver(ctx);
   }, []);
 
   const checkGameOverAfter = useCallback(() => {
@@ -235,6 +371,20 @@ export default function MartSortGame() {
       if (relX - idx * cell > SLOT_WIDTH) return;
 
       const slots = slotsRef.current;
+
+      if (toolModeRef.current === "broom") {
+        if (slots[idx].length > 0) {
+          slots[idx].pop();
+          toolModeRef.current = "none";
+          setToolMode("none");
+          setBroomCount((c) => Math.max(0, c - 1));
+          const ctx = ensureAudioContext(audioCtxRef);
+          if (ctx) playPluck(ctx);
+          checkGameOverAfter();
+        }
+        return;
+      }
+
       const selected = selectedRef.current;
       const topOf = (i: number) =>
         slots[i].length > 0 ? slots[i][slots[i].length - 1] : null;
@@ -242,6 +392,8 @@ export default function MartSortGame() {
       if (selected === null) {
         if (slots[idx].length > 0 && topOf(idx) !== "trash") {
           selectedRef.current = idx;
+          const ctx = ensureAudioContext(audioCtxRef);
+          if (ctx) playPluck(ctx);
         }
         return;
       }
@@ -253,29 +405,56 @@ export default function MartSortGame() {
         const item = slots[selected].pop() as ItemType;
         slots[idx].push(item);
         selectedRef.current = null;
+        const moveCtx = ensureAudioContext(audioCtxRef);
+        if (moveCtx) playPluck(moveCtx);
 
-        const dst = slots[idx];
-        if (
-          dst.length === SLOT_CAPACITY &&
-          dst.every((t) => t === dst[0])
-        ) {
-          clearingRef.current = { index: idx, type: dst[0], start: performance.now() };
+        const nowMove = performance.now();
+        const feverActiveNow =
+          feverUntilRef.current !== null && nowMove < feverUntilRef.current;
+        const clearResult = getClearResult(slots[idx], feverActiveNow);
+
+        if (clearResult) {
+          const slotX = BOARD_PADDING + idx * (SLOT_WIDTH + SLOT_GAP);
+          const originX = slotX + SLOT_WIDTH / 2;
+          const topLevel = slots[idx].length - 1;
+          const originY =
+            BOARD_TOP +
+            SLOT_HEIGHT -
+            SLOT_BOTTOM_PADDING -
+            (topLevel + 1) * ITEM_SIZE +
+            ITEM_SIZE / 2;
+
+          clearingRef.current = {
+            index: idx,
+            count: clearResult.count,
+            start: nowMove,
+          };
           clearTimeoutRef.current = setTimeout(() => {
-            slotsRef.current[idx] = [];
+            const arr = slotsRef.current[idx];
+            arr.splice(arr.length - clearResult.count, clearResult.count);
             clearingRef.current = null;
+            spawnParticles(particlesRef.current, originX, originY);
+            const clearCtx = ensureAudioContext(audioCtxRef);
+            if (clearCtx) playClear(clearCtx);
 
-            const now = performance.now();
+            const now2 = performance.now();
             const comboCount =
-              comboDeadlineRef.current !== null && now <= comboDeadlineRef.current
+              comboDeadlineRef.current !== null && now2 <= comboDeadlineRef.current
                 ? comboRef.current + 1
                 : 1;
             comboRef.current = comboCount;
-            comboDeadlineRef.current = now + COMBO_WINDOW_MS;
+            comboDeadlineRef.current = now2 + COMBO_WINDOW_MS;
 
             const gained = comboCount >= 2 ? 100 * comboCount : 100;
             setScore((s) => s + gained);
             if (comboCount >= 2) {
-              comboPopupRef.current = { combo: comboCount, start: now };
+              comboPopupRef.current = { combo: comboCount, start: now2 };
+            }
+            if (
+              comboCount >= FEVER_COMBO_THRESHOLD &&
+              (feverUntilRef.current === null || now2 >= feverUntilRef.current)
+            ) {
+              feverUntilRef.current = now2 + FEVER_DURATION_MS;
             }
 
             timeLeftRef.current = Math.min(
@@ -289,12 +468,47 @@ export default function MartSortGame() {
           checkGameOverAfter();
         }
       } else {
-        selectedRef.current =
+        const nextSelected =
           slots[idx].length > 0 && topOf(idx) !== "trash" ? idx : null;
+        selectedRef.current = nextSelected;
+        if (nextSelected !== null) {
+          const ctx = ensureAudioContext(audioCtxRef);
+          if (ctx) playPluck(ctx);
+        }
       }
     },
     [checkGameOverAfter]
   );
+
+  const handleBroomClick = () => {
+    if (endedRef.current || broomCount <= 0 || clearingRef.current) return;
+    const next: ToolMode = toolModeRef.current === "broom" ? "none" : "broom";
+    toolModeRef.current = next;
+    setToolMode(next);
+  };
+
+  const handleShuffleClick = () => {
+    if (endedRef.current || shuffleCount <= 0 || clearingRef.current) return;
+    toolModeRef.current = "none";
+    setToolMode("none");
+
+    const slots = slotsRef.current;
+    const flat = slots.flatMap((s) => s);
+    const shuffled = shuffle(flat);
+    let cursor = 0;
+    slotsRef.current = slots.map((s) => {
+      const len = s.length;
+      const chunk = shuffled.slice(cursor, cursor + len);
+      cursor += len;
+      return chunk;
+    });
+    selectedRef.current = null;
+    setShuffleCount((c) => Math.max(0, c - 1));
+
+    const ctx = ensureAudioContext(audioCtxRef);
+    if (ctx) playPluck(ctx);
+    checkGameOverAfter();
+  };
 
   useEffect(() => {
     return () => {
@@ -305,6 +519,9 @@ export default function MartSortGame() {
   useEffect(() => {
     const id = setInterval(() => {
       setDisplayTime(Math.ceil(Math.max(0, timeLeftRef.current)));
+      setFeverActive(
+        feverUntilRef.current !== null && performance.now() < feverUntilRef.current
+      );
     }, 200);
     return () => clearInterval(id);
   }, []);
@@ -341,7 +558,12 @@ export default function MartSortGame() {
           timeLeftRef.current = 0;
           endGame("timeup");
         }
+        if (feverUntilRef.current !== null && t >= feverUntilRef.current) {
+          feverUntilRef.current = null;
+        }
       }
+
+      const feverNow = feverUntilRef.current !== null && t < feverUntilRef.current;
 
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
@@ -391,7 +613,11 @@ export default function MartSortGame() {
             itemY += Math.sin(t / 180) * 5;
           }
 
-          if (clearing && clearing.index === i) {
+          if (
+            clearing &&
+            clearing.index === i &&
+            level >= items.length - clearing.count
+          ) {
             const progress = Math.min(1, (t - clearing.start) / CLEAR_ANIM_MS);
             scale = 1 - progress;
             alpha = 1 - progress;
@@ -409,6 +635,37 @@ export default function MartSortGame() {
           drawItem(ctx, type, itemX, itemY, ITEM_SIZE);
           ctx.restore();
         }
+      }
+
+      const particles = particlesRef.current;
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt * 1000;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        p.vy += 600 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.rot += p.vr * dt;
+        const alpha = Math.max(0, p.life / p.maxLife);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+
+      if (feverNow) {
+        const hue = (t / 5) % 360;
+        ctx.save();
+        ctx.strokeStyle = `hsl(${hue}, 100%, 60%)`;
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, CANVAS_WIDTH - 6, CANVAS_HEIGHT - 6);
+        ctx.restore();
       }
 
       const popup = comboPopupRef.current;
@@ -453,6 +710,8 @@ export default function MartSortGame() {
     slotsRef.current = generateInitialSlots();
     selectedRef.current = null;
     clearingRef.current = null;
+    particlesRef.current = [];
+    toolModeRef.current = "none";
     endedRef.current = false;
     timeLeftRef.current = GAME_DURATION;
     hazardAccumRef.current = 0;
@@ -460,17 +719,28 @@ export default function MartSortGame() {
     comboRef.current = 0;
     comboDeadlineRef.current = null;
     comboPopupRef.current = null;
+    feverUntilRef.current = null;
     setScore(0);
     setGameOver(false);
     setGameOverReason(null);
     setDisplayTime(GAME_DURATION);
+    setFeverActive(false);
+    setToolMode("none");
+    setBroomCount(BROOM_FREE_USES);
+    setShuffleCount(SHUFFLE_FREE_USES);
   };
 
   const timeUrgent = displayTime <= 10;
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="flex items-center gap-6 rounded-lg border border-gray-300 bg-white px-6 py-3 font-mono text-lg tracking-wider text-gray-700 shadow-sm">
+      <div
+        className={`flex items-center gap-6 rounded-lg border px-6 py-3 font-mono text-lg tracking-wider shadow-sm transition-colors ${
+          feverActive
+            ? "border-fuchsia-400 bg-gradient-to-r from-fuchsia-100 via-yellow-100 to-cyan-100 text-gray-800"
+            : "border-gray-300 bg-white text-gray-700"
+        }`}
+      >
         <span>SCORE</span>
         <span className="text-2xl font-bold text-[#00A2E8]">{score}</span>
         <span className="text-gray-300">|</span>
@@ -482,6 +752,14 @@ export default function MartSortGame() {
         >
           {displayTime}
         </span>
+        {feverActive && (
+          <>
+            <span className="text-gray-300">|</span>
+            <span className="animate-pulse font-bold text-fuchsia-600">
+              FEVER!
+            </span>
+          </>
+        )}
       </div>
 
       <div className="relative">
@@ -512,8 +790,31 @@ export default function MartSortGame() {
         )}
       </div>
 
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleBroomClick}
+          disabled={gameOver || broomCount <= 0}
+          className={`rounded-md border-2 px-4 py-2 font-mono text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            toolMode === "broom"
+              ? "border-amber-500 bg-amber-400 text-white"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          🧹 빗자루 ({broomCount})
+        </button>
+        <button
+          onClick={handleShuffleClick}
+          disabled={gameOver || shuffleCount <= 0}
+          className="rounded-md border-2 border-gray-300 bg-white px-4 py-2 font-mono text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          🔀 셔플 ({shuffleCount})
+        </button>
+      </div>
+
       <p className="font-mono text-xs text-gray-400">
-        진열대를 클릭해 아이템을 선택하고, 같은 종류가 있는 진열대를 클릭해 옮기세요. 5초 안에 연속으로 정렬하면 콤보 보너스!
+        {toolMode === "broom"
+          ? "빗자루 모드: 지울 진열대를 클릭하세요."
+          : "진열대를 클릭해 아이템을 선택하고, 같은 종류가 있는 진열대를 클릭해 옮기세요. 5초 안에 연속 정렬하면 콤보 보너스!"}
       </p>
     </div>
   );
