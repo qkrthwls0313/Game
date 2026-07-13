@@ -2,6 +2,28 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+const GAME_CONFIG = {
+  // 1. 기본 타이머 및 시간 설정
+  INITIAL_TIME_LIMIT: 60, // 게임 시작 시 주어지는 제한 시간 (초)
+  TIME_GAIN_ON_MATCH: 5, // 아이템 정렬(매칭) 성공 시 추가되는 시간 (초)
+  MAX_TIME_LIMIT: 60, // 타이머가 가질 수 있는 최대 시간 (초)
+
+  // 2. 콤보 시스템 설정
+  COMBO_WINDOW_MS: 5000, // 콤보를 유지하기 위해 허용되는 시간 (밀리초, 5000ms = 5초)
+  BASE_SCORE_PER_MATCH: 100, // 매칭 기본 점수
+
+  // 3. 피버 모드 설정
+  FEVER_TRIGGER_COMBO: 5, // 피버 모드를 발동시키기 위한 최소 콤보 횟수
+  FEVER_DURATION_MS: 8000, // 피버 모드 지속 시간 (밀리초, 8000ms = 8초)
+
+  // 4. 방해 요소 (쓰레기) 설정
+  HAZARD_SPAWN_INTERVAL_MS: 45000, // 쓰레기가 생성되는 주기 (밀리초, 45000ms = 45초)
+
+  // 5. 아이템 기본 제한
+  MAX_BROOM_COUNT: 1, // 판당 사용할 수 있는 빗자루 아이템 개수
+  MAX_SHUFFLE_COUNT: 2, // 판당 사용할 수 있는 셔플 아이템 개수
+};
+
 type RealItemType = "cola" | "milk" | "bread";
 type ItemType = RealItemType | "trash";
 type Slot = ItemType[];
@@ -31,14 +53,7 @@ const CANVAS_HEIGHT = BOARD_TOP + SLOT_HEIGHT + BOARD_PADDING;
 
 const CLEAR_ANIM_MS = 300;
 const COMBO_POPUP_MS = 900;
-const COMBO_WINDOW_MS = 5000;
-const GAME_DURATION = 60;
-const TIME_BONUS_PER_CLEAR = 5;
-const HAZARD_INTERVAL = 45;
-const FEVER_COMBO_THRESHOLD = 5;
-const FEVER_DURATION_MS = 8000;
-const BROOM_FREE_USES = 1;
-const SHUFFLE_FREE_USES = 2;
+const HAZARD_INTERVAL_SEC = GAME_CONFIG.HAZARD_SPAWN_INTERVAL_MS / 1000;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -322,7 +337,7 @@ export default function MartSortGame() {
   const toolModeRef = useRef<ToolMode>("none");
 
   const endedRef = useRef(false);
-  const timeLeftRef = useRef(GAME_DURATION);
+  const timeLeftRef = useRef(GAME_CONFIG.INITIAL_TIME_LIMIT);
   const hazardAccumRef = useRef(0);
   const lastFrameTimeRef = useRef<number | null>(null);
   const comboRef = useRef(0);
@@ -333,11 +348,11 @@ export default function MartSortGame() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
-  const [displayTime, setDisplayTime] = useState(GAME_DURATION);
+  const [displayTime, setDisplayTime] = useState(GAME_CONFIG.INITIAL_TIME_LIMIT);
   const [feverActive, setFeverActive] = useState(false);
   const [toolMode, setToolMode] = useState<ToolMode>("none");
-  const [broomCount, setBroomCount] = useState(BROOM_FREE_USES);
-  const [shuffleCount, setShuffleCount] = useState(SHUFFLE_FREE_USES);
+  const [broomCount, setBroomCount] = useState(GAME_CONFIG.MAX_BROOM_COUNT);
+  const [shuffleCount, setShuffleCount] = useState(GAME_CONFIG.MAX_SHUFFLE_COUNT);
 
   const endGame = useCallback((reason: "stuck" | "timeup") => {
     if (endedRef.current) return;
@@ -443,23 +458,26 @@ export default function MartSortGame() {
                 ? comboRef.current + 1
                 : 1;
             comboRef.current = comboCount;
-            comboDeadlineRef.current = now2 + COMBO_WINDOW_MS;
+            comboDeadlineRef.current = now2 + GAME_CONFIG.COMBO_WINDOW_MS;
 
-            const gained = comboCount >= 2 ? 100 * comboCount : 100;
+            const gained =
+              comboCount >= 2
+                ? GAME_CONFIG.BASE_SCORE_PER_MATCH * comboCount
+                : GAME_CONFIG.BASE_SCORE_PER_MATCH;
             setScore((s) => s + gained);
             if (comboCount >= 2) {
               comboPopupRef.current = { combo: comboCount, start: now2 };
             }
             if (
-              comboCount >= FEVER_COMBO_THRESHOLD &&
+              comboCount >= GAME_CONFIG.FEVER_TRIGGER_COMBO &&
               (feverUntilRef.current === null || now2 >= feverUntilRef.current)
             ) {
-              feverUntilRef.current = now2 + FEVER_DURATION_MS;
+              feverUntilRef.current = now2 + GAME_CONFIG.FEVER_DURATION_MS;
             }
 
             timeLeftRef.current = Math.min(
-              GAME_DURATION,
-              timeLeftRef.current + TIME_BONUS_PER_CLEAR
+              GAME_CONFIG.MAX_TIME_LIMIT,
+              timeLeftRef.current + GAME_CONFIG.TIME_GAIN_ON_MATCH
             );
 
             checkGameOverAfter();
@@ -550,8 +568,8 @@ export default function MartSortGame() {
       if (!endedRef.current) {
         timeLeftRef.current -= dt;
         hazardAccumRef.current += dt;
-        if (hazardAccumRef.current >= HAZARD_INTERVAL) {
-          hazardAccumRef.current -= HAZARD_INTERVAL;
+        if (hazardAccumRef.current >= HAZARD_INTERVAL_SEC) {
+          hazardAccumRef.current -= HAZARD_INTERVAL_SEC;
           spawnTrash(slotsRef.current);
         }
         if (timeLeftRef.current <= 0) {
@@ -567,7 +585,7 @@ export default function MartSortGame() {
 
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-      const fraction = Math.max(0, timeLeftRef.current / GAME_DURATION);
+      const fraction = Math.max(0, timeLeftRef.current / GAME_CONFIG.MAX_TIME_LIMIT);
       const barX = BOARD_PADDING;
       const barY = BOARD_PADDING;
       const barW = CANVAS_WIDTH - BOARD_PADDING * 2;
@@ -713,7 +731,7 @@ export default function MartSortGame() {
     particlesRef.current = [];
     toolModeRef.current = "none";
     endedRef.current = false;
-    timeLeftRef.current = GAME_DURATION;
+    timeLeftRef.current = GAME_CONFIG.INITIAL_TIME_LIMIT;
     hazardAccumRef.current = 0;
     lastFrameTimeRef.current = null;
     comboRef.current = 0;
@@ -723,11 +741,11 @@ export default function MartSortGame() {
     setScore(0);
     setGameOver(false);
     setGameOverReason(null);
-    setDisplayTime(GAME_DURATION);
+    setDisplayTime(GAME_CONFIG.INITIAL_TIME_LIMIT);
     setFeverActive(false);
     setToolMode("none");
-    setBroomCount(BROOM_FREE_USES);
-    setShuffleCount(SHUFFLE_FREE_USES);
+    setBroomCount(GAME_CONFIG.MAX_BROOM_COUNT);
+    setShuffleCount(GAME_CONFIG.MAX_SHUFFLE_COUNT);
   };
 
   const timeUrgent = displayTime <= 10;
